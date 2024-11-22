@@ -1,0 +1,14 @@
+# gradle
+
+.gradle/
+build/
+out/
+run/
+remappedSrc/
+
+# idea
+
+.idea/
+*.iml
+*.ipr
+*.iws
