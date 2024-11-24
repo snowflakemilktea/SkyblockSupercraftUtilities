@@ -56,6 +56,10 @@ public class RecipeQueryClient implements ClientModInitializer {
         }
         String id_string = ID.toString().replace("\"", "");
         var chains = RecipeQuery.INSTANCE.getChains();
+        if (chains == null) {
+            client.player.sendSystemMessage(Component.literal("Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC));
+            return;
+        }
 
         if (id_string.contains("GEM")) {
             var split = id_string.split("_", 2);

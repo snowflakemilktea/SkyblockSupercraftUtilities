@@ -3,8 +3,8 @@
   "id": "ssu",
   "version": "${version}",
   "name": "Skyblock Supercraft Utilities",
-  "description": "",
-  "authors": [],
+  "description": "Hotkeys for Hypixel Skyblock Supercraft Menu",
+  "authors": ["Kare"],
   "contact": {
     "repo": "https://github.com/KareTM/SSU"
   },

@@ -14,7 +14,7 @@ public class RecipeQueryReloadListener implements SimpleSynchronousResourceReloa
 
     @Override
     public ResourceLocation getFabricId() {
-        return ResourceLocation.fromNamespaceAndPath("recipequery", "data/recipe_chains");
+        return ResourceLocation.fromNamespaceAndPath("ssu", "data/recipe_chains");
     }
 
     @Override
