@@ -46,18 +46,18 @@ public class RecipeQueryClient implements ClientModInitializer {
         assert client.player != null;
         var customData = slot.getItem().get(DataComponents.CUSTOM_DATA);
         if (customData == null) {
-            client.player.sendSystemMessage(Component.literal("This item has no data and cannot be checked.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC));
+            client.getChatListener().handleSystemMessage(Component.literal("This item has no data and cannot be checked.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
             return;
         }
         var ID = Objects.requireNonNull(customData).copyTag().get("id");
         if (ID == null) {
-            client.player.sendSystemMessage(Component.literal("This item has no ID and cannot be checked.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC));
+            client.getChatListener().handleSystemMessage(Component.literal("This item has no ID and cannot be checked.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
             return;
         }
         String id_string = ID.toString().replace("\"", "");
         var chains = RecipeQuery.INSTANCE.getChains();
         if (chains == null) {
-            client.player.sendSystemMessage(Component.literal("Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC));
+            client.getChatListener().handleSystemMessage(Component.literal("Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
             return;
         }
 
@@ -81,7 +81,7 @@ public class RecipeQueryClient implements ClientModInitializer {
             }
         }
 
-        client.player.sendSystemMessage(Component.literal("This item has no enchanted/upgraded version.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC));
+        client.getChatListener().handleSystemMessage(Component.literal("This item has no enchanted/upgraded version.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
     }
 
 
