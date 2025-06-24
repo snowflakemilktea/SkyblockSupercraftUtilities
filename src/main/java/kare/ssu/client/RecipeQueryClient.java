@@ -35,9 +35,31 @@ public class RecipeQueryClient implements ClientModInitializer {
     public static void onRecipeQueryKeyPressed(Slot slot) {
         if (slot == null)
             return;
-        String itemString = doSubstitution(slot.getItem().getDisplayName().getString().replace("[", "").replace("]", ""));
+        var item = slot.getItem();
+
+        var name = item.getDisplayName().getString().replace("[", "").replace("]", "").toLowerCase();
+
+        var customData = item.get(DataComponents.CUSTOM_DATA);
+        if (customData != null) {
+            var reforge = customData.copyTag().get("modifier");
+            if (reforge != null) {
+                var reforge_str = reforge.asString();
+                if (reforge_str.isPresent()) {
+                    name = name.replace(reforge_str.get(), "");
+                }
+            }
+            var thick = customData.copyTag().get("wood_singularity_count");
+            if (thick != null) {
+                var thickVal = thick.asInt();
+                if (thickVal.isPresent() && thickVal.get() != 0) {
+                    name = name.replace("thick", "");
+                }
+            }
+        }
+
+        String itemString = doSubstitution(name);
         assert client.player != null;
-        client.player.connection.sendCommand("recipe " + itemString.toLowerCase());
+        client.player.connection.sendCommand("recipe " + itemString);
     }
 
     public static void onViewEnchanted(Slot slot) {
