@@ -12,11 +12,15 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import org.lwjgl.glfw.GLFW;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public class RecipeQueryClient implements ClientModInitializer {
+    private static final Logger log = LoggerFactory.getLogger(RecipeQueryClient.class);
     private static Minecraft client;
 
     public static KeyMapping queryKey;
@@ -38,6 +42,12 @@ public class RecipeQueryClient implements ClientModInitializer {
         var item = slot.getItem();
 
         var name = item.getDisplayName().getString().replace("[", "").replace("]", "").toLowerCase();
+        log.info(name);
+        Pattern tradePattern = Pattern.compile(" x\\d+$");
+        if (tradePattern.matcher(name).find()) {
+            name = name.replaceAll(tradePattern.pattern(), "");
+            log.info(name);
+        }
 
         var customData = item.get(DataComponents.CUSTOM_DATA);
         if (customData != null) {
