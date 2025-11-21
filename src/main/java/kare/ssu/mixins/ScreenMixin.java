@@ -3,6 +3,7 @@ package kare.ssu.mixins;
 import kare.ssu.client.RecipeQueryClient;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.client.input.KeyEvent;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,11 +18,11 @@ public abstract class ScreenMixin {
     @Shadow public abstract void onClose();
 
     @Inject(method = "keyPressed", at = @At("HEAD"))
-    private void keyPressed(int i, int j, int k, CallbackInfoReturnable<Boolean> cir) {
-        if (RecipeQueryClient.queryKey.matches(i, j) && hoveredSlot != null) {
+    private void keyPressed(KeyEvent e, CallbackInfoReturnable<Boolean> cir) {
+        if (RecipeQueryClient.queryKey.matches(e) && hoveredSlot != null) {
             this.onClose();
             RecipeQueryClient.onRecipeQueryKeyPressed(hoveredSlot);
-        } else if (RecipeQueryClient.enchantedKey.matches(i, j) && hoveredSlot != null) {
+        } else if (RecipeQueryClient.enchantedKey.matches(e) && hoveredSlot != null) {
             this.onClose();
             RecipeQueryClient.onViewEnchanted(hoveredSlot);
         }
