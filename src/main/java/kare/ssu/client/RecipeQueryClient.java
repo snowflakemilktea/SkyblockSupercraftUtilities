@@ -7,6 +7,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.KeyMapping.Category;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.Minecraft;
+import net.minecraft.sounds.SoundEvent;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -114,7 +115,7 @@ public class RecipeQueryClient implements ClientModInitializer {
                 }
             }
         }
-
+        client.player.playSound(SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath("minecraft","entity.enderman.teleport"), 0.0F), 1.0F, 0.5F);
         client.getChatListener().handleSystemMessage(Component.literal("This item has no enchanted/upgraded version.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
     }
 
