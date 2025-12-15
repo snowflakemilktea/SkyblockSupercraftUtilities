@@ -12,6 +12,8 @@ public class ChainCreator {
 
         try (var br = res.openAsReader()) {
             br.lines().forEach(line -> {
+                if(line.trim().length()==0 || line.startsWith("#")) return;
+
                 var items = line.trim().split("\\s->\\s");
                 chainList.add(new CraftingChain(items));
             });
