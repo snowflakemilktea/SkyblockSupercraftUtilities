@@ -1,24 +1,23 @@
 package kare.ssu.utils;
 
 import kare.ssu.RecipeQuery;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 
-public class RecipeQueryReloadListener implements SimpleSynchronousResourceReloadListener {
+public class RecipeQueryReloadListener implements ResourceManagerReloadListener {
     public static void register() {
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new RecipeQueryReloadListener());
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloader(getResourceLocation(), new RecipeQueryReloadListener());
     }
 
-    @Override
-    public ResourceLocation getFabricId() {
+    public static ResourceLocation getResourceLocation() {
         return ResourceLocation.fromNamespaceAndPath("ssu", "data/recipe_chains");
     }
 
     @Override
     public void onResourceManagerReload(ResourceManager resourceManager) {
-        resourceManager.getResource(getFabricId()).ifPresent(resource -> RecipeQuery.INSTANCE.reloadChains(resource));
+        resourceManager.getResource(getResourceLocation()).ifPresent(resource -> RecipeQuery.INSTANCE.reloadChains(resource));
     }
 }

@@ -12,6 +12,10 @@ public class ChainCreator {
 
         try (var br = res.openAsReader()) {
             br.lines().forEach(line -> {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("--"))
+                    return;
+
                 var items = line.trim().split("\\s->\\s");
                 chainList.add(new CraftingChain(items));
             });
