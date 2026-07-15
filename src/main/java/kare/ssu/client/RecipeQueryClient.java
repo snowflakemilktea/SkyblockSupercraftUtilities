@@ -7,7 +7,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -15,6 +15,9 @@ import net.minecraft.world.inventory.Slot;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 
 import java.util.Map;
 import java.util.Objects;
@@ -79,18 +82,17 @@ public class RecipeQueryClient implements ClientModInitializer {
         assert client.player != null;
         var customData = slot.getItem().get(DataComponents.CUSTOM_DATA);
         if (customData == null) {
-            client.getChatListener().handleSystemMessage(Component.literal("This item has no data and cannot be checked.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
             return;
         }
         var ID = Objects.requireNonNull(customData).copyTag().get("id");
         if (ID == null) {
-            client.getChatListener().handleSystemMessage(Component.literal("This item has no ID and cannot be checked.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
+            sendErrorMessage(client, "This item has no ID.");
             return;
         }
         String id_string = ID.toString().replace("\"", "");
         var chains = RecipeQuery.INSTANCE.getChains();
         if (chains == null) {
-            client.getChatListener().handleSystemMessage(Component.literal("Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
+            sendErrorMessage(client, "Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.");
             return;
         }
 
@@ -114,10 +116,17 @@ public class RecipeQueryClient implements ClientModInitializer {
             }
         }
 
-        client.getChatListener().handleSystemMessage(Component.literal("This item has no enchanted/upgraded version.").withStyle(ChatFormatting.BOLD, ChatFormatting.RED, ChatFormatting.ITALIC), false);
+        sendErrorMessage(client, "This item has no enchanted/upgraded version.");
     }
 
-
+    private static void sendErrorMessage(Minecraft client, String message) {
+        client.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENDERMAN_TELEPORT,1.0f,0.5f));
+        client.getChatListener().handleSystemMessage(
+            Component.literal("[SSU] ").withStyle(ChatFormatting.GOLD).append(
+                Component.literal(message).withStyle(ChatFormatting.RED)
+            ), false
+        );
+    }
 
     public static String doSubstitution(String input) {
         if (input.contains("Gemstone")) {
@@ -142,14 +151,14 @@ public class RecipeQueryClient implements ClientModInitializer {
         // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
         // The keycode of the key
         // The translation key of the keybinding's category.
-         queryKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+         queryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.recipequery.query", // The translation key of the keybinding's name
                 InputConstants.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_R, // The keycode of the key
                 recipequery // The translation key of the keybinding's category.
         ));
 
-        enchantedKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        enchantedKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.recipequery.viewenchanted", // The translation key of the keybinding's name
                 InputConstants.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_Y, // The keycode of the key
