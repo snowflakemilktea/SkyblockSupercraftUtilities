@@ -2,6 +2,7 @@ package kare.ssu.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import kare.ssu.RecipeQuery;
+import kare.ssu.client.utils.Feedback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -37,8 +38,7 @@ public class RecipeQueryClient implements ClientModInitializer {
             Map.entry("Wheat", "Hay"),
             Map.entry("Iron Ingot", "Iron"),
             Map.entry("Gold Ingot", "Gold"),
-            Map.entry("Nether Quartz", "Quartz")
-    );
+            Map.entry("Nether Quartz", "Quartz"));
 
     public static void onRecipeQueryKeyPressed(Slot slot) {
         if (slot == null)
@@ -86,13 +86,14 @@ public class RecipeQueryClient implements ClientModInitializer {
         }
         var ID = Objects.requireNonNull(customData).copyTag().get("id");
         if (ID == null) {
-            sendErrorMessage(client, "This item has no ID.");
+            Feedback.sendErrorMessage("This item has no ID.");
             return;
         }
         String id_string = ID.toString().replace("\"", "");
         var chains = RecipeQuery.INSTANCE.getChains();
         if (chains == null) {
-            sendErrorMessage(client, "Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.");
+            Feedback.sendErrorMessage(
+                    "Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.");
             return;
         }
 
@@ -103,7 +104,8 @@ public class RecipeQueryClient implements ClientModInitializer {
 
             for (var chain : chains) {
                 if (chain.isInChain(chain_string) && chain.getNext(chain_string) != null) {
-                    client.player.connection.sendCommand("viewrecipe " + chain.getNext(chain_string) + "_" + gem_string);
+                    client.player.connection
+                            .sendCommand("viewrecipe " + chain.getNext(chain_string) + "_" + gem_string);
                     return;
                 }
             }
@@ -116,16 +118,7 @@ public class RecipeQueryClient implements ClientModInitializer {
             }
         }
 
-        sendErrorMessage(client, "This item has no enchanted/upgraded version.");
-    }
-
-    private static void sendErrorMessage(Minecraft client, String message) {
-        client.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENDERMAN_TELEPORT,1.0f,0.5f));
-        client.getChatListener().handleSystemMessage(
-            Component.literal("[SSU] ").withStyle(ChatFormatting.GOLD).append(
-                Component.literal(message).withStyle(ChatFormatting.RED)
-            ), false
-        );
+        Feedback.sendErrorMessage("This item has no enchanted/upgraded version.");
     }
 
     public static String doSubstitution(String input) {
@@ -141,17 +134,17 @@ public class RecipeQueryClient implements ClientModInitializer {
         return replacements.getOrDefault(input, input);
     }
 
-
     @Override
     public void onInitializeClient() {
         client = Minecraft.getInstance();
-        KeyMapping.Category recipequery = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("recipequery", "keys"));
+        KeyMapping.Category recipequery = KeyMapping.Category
+                .register(Identifier.fromNamespaceAndPath("recipequery", "keys"));
 
         // The translation key of the keybinding's name
         // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
         // The keycode of the key
         // The translation key of the keybinding's category.
-         queryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        queryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.recipequery.query", // The translation key of the keybinding's name
                 InputConstants.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_R, // The keycode of the key
@@ -167,4 +160,3 @@ public class RecipeQueryClient implements ClientModInitializer {
 
     }
 }
-
