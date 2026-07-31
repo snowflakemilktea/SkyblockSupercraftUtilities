@@ -3,22 +3,19 @@ package kare.ssu.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import kare.ssu.RecipeQuery;
 import kare.ssu.client.utils.Feedback;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.sounds.SoundEvents;
 
 import java.util.Map;
 import java.util.Objects;
@@ -28,8 +25,8 @@ public class RecipeQueryClient implements ClientModInitializer {
     private static final Logger log = LoggerFactory.getLogger(RecipeQueryClient.class);
     private static Minecraft client;
 
-    public static KeyMapping queryKey;
-    public static KeyMapping enchantedKey;
+    private static KeyMapping queryKey;
+    private static KeyMapping enchantedKey;
 
     private static final Map<String, String> replacements = Map.ofEntries(
             Map.entry("Raw Porkchop", "Pork"),
@@ -40,11 +37,19 @@ public class RecipeQueryClient implements ClientModInitializer {
             Map.entry("Gold Ingot", "Gold"),
             Map.entry("Nether Quartz", "Quartz"));
 
-    public static void onRecipeQueryKeyPressed(Slot slot) {
-        if (slot == null)
-            return;
-        var item = slot.getItem();
+    public static boolean handleKeyEvent(Screen screen, ItemStack stack, KeyEvent event) {
+        if (RecipeQueryClient.queryKey.matches(event)) {
+            screen.onClose();
+            RecipeQueryClient.onRecipeQueryKeyPressed(stack);
+            return true;
+        } else if (RecipeQueryClient.enchantedKey.matches(event)) {
+            RecipeQueryClient.onViewEnchanted(stack);
+            return true;
+        }
+        return false;
+    }
 
+    public static void onRecipeQueryKeyPressed(ItemStack item) {
         var name = item.getDisplayName().getString().replace("[", "").replace("]", "").toLowerCase();
         log.info(name);
         Pattern tradePattern = Pattern.compile(" x\\d+$");
@@ -76,11 +81,9 @@ public class RecipeQueryClient implements ClientModInitializer {
         client.player.connection.sendCommand("recipe " + itemString);
     }
 
-    public static void onViewEnchanted(Slot slot) {
-        if (slot == null)
-            return;
+    public static void onViewEnchanted(ItemStack item) {
         assert client.player != null;
-        var customData = slot.getItem().get(DataComponents.CUSTOM_DATA);
+        var customData = item.get(DataComponents.CUSTOM_DATA);
         if (customData == null) {
             return;
         }

@@ -17,6 +17,9 @@
     ],
     "main": [
       "kare.ssu.RecipeQuery"
+    ],
+    "skyblock-item-list": [
+      "kare.ssu.client.compat.SkyblockItemList"
     ]
   },
   "depends": {
