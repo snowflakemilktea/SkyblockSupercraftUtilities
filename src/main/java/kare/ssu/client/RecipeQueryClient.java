@@ -2,22 +2,20 @@ package kare.ssu.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import kare.ssu.RecipeQuery;
-import net.minecraft.ChatFormatting;
+import kare.ssu.client.utils.Feedback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.sounds.SoundEvents;
 
 import java.util.Map;
 import java.util.Objects;
@@ -27,8 +25,8 @@ public class RecipeQueryClient implements ClientModInitializer {
     private static final Logger log = LoggerFactory.getLogger(RecipeQueryClient.class);
     private static Minecraft client;
 
-    public static KeyMapping queryKey;
-    public static KeyMapping enchantedKey;
+    private static KeyMapping queryKey;
+    private static KeyMapping enchantedKey;
 
     private static final Map<String, String> replacements = Map.ofEntries(
             Map.entry("Raw Porkchop", "Pork"),
@@ -37,14 +35,21 @@ public class RecipeQueryClient implements ClientModInitializer {
             Map.entry("Wheat", "Hay"),
             Map.entry("Iron Ingot", "Iron"),
             Map.entry("Gold Ingot", "Gold"),
-            Map.entry("Nether Quartz", "Quartz")
-    );
+            Map.entry("Nether Quartz", "Quartz"));
 
-    public static void onRecipeQueryKeyPressed(Slot slot) {
-        if (slot == null)
-            return;
-        var item = slot.getItem();
+    public static boolean handleKeyEvent(Screen screen, ItemStack stack, KeyEvent event) {
+        if (RecipeQueryClient.queryKey.matches(event)) {
+            screen.onClose();
+            RecipeQueryClient.onRecipeQueryKeyPressed(stack);
+            return true;
+        } else if (RecipeQueryClient.enchantedKey.matches(event)) {
+            RecipeQueryClient.onViewEnchanted(stack);
+            return true;
+        }
+        return false;
+    }
 
+    public static void onRecipeQueryKeyPressed(ItemStack item) {
         var name = item.getDisplayName().getString().replace("[", "").replace("]", "").toLowerCase();
         log.info(name);
         Pattern tradePattern = Pattern.compile(" x\\d+$");
@@ -76,23 +81,22 @@ public class RecipeQueryClient implements ClientModInitializer {
         client.player.connection.sendCommand("recipe " + itemString);
     }
 
-    public static void onViewEnchanted(Slot slot) {
-        if (slot == null)
-            return;
+    public static void onViewEnchanted(ItemStack item) {
         assert client.player != null;
-        var customData = slot.getItem().get(DataComponents.CUSTOM_DATA);
+        var customData = item.get(DataComponents.CUSTOM_DATA);
         if (customData == null) {
             return;
         }
         var ID = Objects.requireNonNull(customData).copyTag().get("id");
         if (ID == null) {
-            sendErrorMessage(client, "This item has no ID.");
+            Feedback.sendErrorMessage("This item has no ID.");
             return;
         }
         String id_string = ID.toString().replace("\"", "");
         var chains = RecipeQuery.INSTANCE.getChains();
         if (chains == null) {
-            sendErrorMessage(client, "Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.");
+            Feedback.sendErrorMessage(
+                    "Crafting chains data missing, try reloading your client (F3 + T). If it persists, report this issue.");
             return;
         }
 
@@ -103,7 +107,8 @@ public class RecipeQueryClient implements ClientModInitializer {
 
             for (var chain : chains) {
                 if (chain.isInChain(chain_string) && chain.getNext(chain_string) != null) {
-                    client.player.connection.sendCommand("viewrecipe " + chain.getNext(chain_string) + "_" + gem_string);
+                    client.player.connection
+                            .sendCommand("viewrecipe " + chain.getNext(chain_string) + "_" + gem_string);
                     return;
                 }
             }
@@ -116,16 +121,7 @@ public class RecipeQueryClient implements ClientModInitializer {
             }
         }
 
-        sendErrorMessage(client, "This item has no enchanted/upgraded version.");
-    }
-
-    private static void sendErrorMessage(Minecraft client, String message) {
-        client.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENDERMAN_TELEPORT,1.0f,0.5f));
-        client.getChatListener().handleSystemMessage(
-            Component.literal("[SSU] ").withStyle(ChatFormatting.GOLD).append(
-                Component.literal(message).withStyle(ChatFormatting.RED)
-            ), false
-        );
+        Feedback.sendErrorMessage("This item has no enchanted/upgraded version.");
     }
 
     public static String doSubstitution(String input) {
@@ -141,17 +137,17 @@ public class RecipeQueryClient implements ClientModInitializer {
         return replacements.getOrDefault(input, input);
     }
 
-
     @Override
     public void onInitializeClient() {
         client = Minecraft.getInstance();
-        KeyMapping.Category recipequery = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("recipequery", "keys"));
+        KeyMapping.Category recipequery = KeyMapping.Category
+                .register(Identifier.fromNamespaceAndPath("recipequery", "keys"));
 
         // The translation key of the keybinding's name
         // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
         // The keycode of the key
         // The translation key of the keybinding's category.
-         queryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        queryKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.recipequery.query", // The translation key of the keybinding's name
                 InputConstants.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_R, // The keycode of the key
@@ -167,4 +163,3 @@ public class RecipeQueryClient implements ClientModInitializer {
 
     }
 }
-

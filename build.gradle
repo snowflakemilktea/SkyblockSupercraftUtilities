@@ -3,12 +3,19 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.mod_version
-group = project.maven_group
+version = "${project.mod_version}+${sc.current.version}"
+base.archivesName = project.mod_id
 
-base {
-    archivesName = project.archives_base_name
-}
+def requiredJava = 
+    sc.current.parsed.matches('>=1.20.6') ? JavaVersion.VERSION_21 :
+    sc.current.parsed.matches('>=1.18')   ? JavaVersion.VERSION_17 :
+    sc.current.parsed.matches('>=1.17')   ? JavaVersion.VERSION_16 :
+                                            JavaVersion.VERSION_1_8
+
+def minecraftVersion = sc.current.version
+def fabricLoaderVersion = project.loader_version
+def fabricApiVersion = project.fabric_api_version
+
 
 repositories {
     // Add repositories to retrieve artifacts from in here.
@@ -16,69 +23,90 @@ repositories {
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
-}
-
-dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-}
-
-processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_version", project.minecraft_version
-    inputs.property "loader_version", project.loader_version
-    filteringCharset = "UTF-8"
-
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version,
-                "fabric_api_version": project.fabric_api_version
+    maven {
+        url = "https://maven.operationpotato.com/releases"
+        name = 'Mod: SkyblockItemList'
+        content {
+            includeGroupAndSubgroups "com.operationpotato"
+        }
     }
 }
 
-def targetJavaVersion = 25
-tasks.withType(JavaCompile).configureEach {
+dependencies {
+    // Change the versions in ./settings.gradle
+    minecraft "com.mojang:minecraft:${minecraftVersion}"
+    implementation "net.fabricmc:fabric-loader:${fabricLoaderVersion}"
+
+    // Change the versions in ./versions/.../gradle.properties
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
+    compileOnly "com.operationpotato:skyblock-item-list-api:${depsItemListVersion}"
+}
+
+processResources {
+    inputs.property "version", version
+    inputs.property "minecraft_version", minecraftVersion
+    inputs.property "loader_version", fabricLoaderVersion
+    inputs.property "fabric_api_version", fabricApiVersion
+    filteringCharset = "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": version,
+                "minecraft_version": minecraftVersion,
+                "loader_version": fabricLoaderVersion,
+                "fabric_api_version": fabricApiVersion
+    }
+}
+
+/*tasks.withType(JavaCompile).configureEach {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
     // this fixes some edge cases with special characters not displaying correctly
     // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
     // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        it.options.release.set(targetJavaVersion)
+    if (requiredJava >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release.set(requiredJava)
     }
-}
+}*/
 
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
+    /*if (JavaVersion.current() < requiredJava) {
+        toolchain.languageVersion = JavaLanguageVersion.of(requiredJava)
+    }*/
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
     // If you remove this line, sources will not be generated.
-    //withSourcesJar()
+    withSourcesJar()
+    sourceCompatibility = requiredJava
+    targetCompatibility = requiredJava
 }
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archives_base_name}"}
+        rename { "${it}_${base.archivesName}"}
     }
 }
 
 tasks.named('jar', Jar) {
-    archiveFileName = "${project.archives_base_name}-${project.version}+${project.minecraft_version}.jar"
+    doLast {
+        def distDir = rootProject.layout.projectDirectory.dir("out").asFile
+        if (!distDir.exists()) {
+            distDir.mkdirs()
+        }
+        
+        copy {
+            from layout.buildDirectory.dir("libs")
+            include "*.jar"
+            exclude "*-dev.jar", "*-sources.jar"
+            into distDir
+        }
+    }
 }
 
 // configure the maven publication
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
+            artifactId = base.archivesName
             from components.java
         }
     }
